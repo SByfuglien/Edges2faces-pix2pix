@@ -3,7 +3,6 @@
 
 # import the necessary packages
 import argparse
-import glob
 import re
 
 import cv2
@@ -115,6 +114,9 @@ destination_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/edges/"
 picture_num = 1
 for root, dirs, files in os.walk(root_dir, topdown=True):
 	for file in sorted(files, key=natural_keys):
+		# if picture_num < 492:
+		# 	picture_num += 1
+		# 	continue
 		image = cv2.imread(os.path.join(root, file))
 		(H, W) = image.shape[:2]
 
