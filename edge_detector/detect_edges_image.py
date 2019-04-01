@@ -113,7 +113,7 @@ def natural_keys(text):
 root_dir = args["image_dir"]
 destination_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/edges/"
 picture_num = 1
-for root, dir, files in os.walk(root_dir, topdown=True):
+for root, dirs, files in os.walk(root_dir, topdown=True):
 	for file in sorted(files, key=natural_keys):
 		image = cv2.imread(os.path.join(root, file))
 		(H, W) = image.shape[:2]
@@ -142,5 +142,5 @@ for root, dir, files in os.walk(root_dir, topdown=True):
 		# show the output edge detection results for Canny and
 		# Holistically-Nested Edge Detection
 		hed = cv2.bitwise_not(hed)
-		cv2.imwrite(destination_dir + "edges_" + str(picture_num) + ".jpg", hed)
+		cv2.imwrite(destination_dir + str(picture_num) + "_B" + ".jpg", hed)
 		picture_num += 1
