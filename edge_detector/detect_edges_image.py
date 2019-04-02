@@ -144,5 +144,5 @@ for root, dirs, files in os.walk(root_dir, topdown=True):
 		# show the output edge detection results for Canny and
 		# Holistically-Nested Edge Detection
 		hed = cv2.bitwise_not(hed)
-		cv2.imwrite(destination_dir + str(picture_num) + "_B" + ".jpg", hed)
+		cv2.imwrite(destination_dir + str(picture_num) + "_A" + ".jpg", hed)
 		picture_num += 1

@@ -1,5 +1,6 @@
 import os
 import re
+import random
 
 
 def atoi(text):
@@ -15,17 +16,21 @@ def natural_keys(text):
 	return [atoi(c) for c in re.split(r'(\d+)', text)]
 
 
-root_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/targets/"
-destination_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/targets/"
-# root_dir = "dataset/faces/train/**"
-# destination_dir = "dataset/faces/train/"
+# root_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/targets/"
+# destination_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/targets/"
+root_dir = "dataset-2k/train/"
+destination_dir = "dataset-2k/val/"
 picture_num = 1
 for root, dirs, files in os.walk(root_dir, topdown=True):
 	for file in sorted(files, key=natural_keys):
-		print("{}/{}".format(picture_num, len(files)))
+		# print("{}/{}".format(picture_num, len(files)))
 		# if picture_num < 492:
 		# 	picture_num += 1
 		# 	continue
-		os.rename(os.path.join(root, file), destination_dir + str(picture_num) + "_B" + ".jpg")
-		picture_num += 1
+		if random.random() < 0.11:
+			os.rename(os.path.join(root, file), destination_dir + file)
+			picture_num += 1
+			print(picture_num)
+			if picture_num == 201:
+				break
 
