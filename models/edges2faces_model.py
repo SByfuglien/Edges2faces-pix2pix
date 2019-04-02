@@ -51,9 +51,9 @@ class Edges2facesModel(BaseModel):
 		"""
 		BaseModel.__init__(self, opt)  # call the initialization method of BaseModel
 		# specify the training losses you want to print out. The program will call base_model.get_current_losses to plot the losses to the console and save them to the disk.
-		self.loss_names = ['G_L1', 'G_GAN', 'D_real', 'D_fake ']
+		self.loss_names = ['G_L1', 'G_GAN', 'D_faces', 'D_edges']
 		# specify the images you want to save and display. The program will call base_model.get_current_visuals to save and display these images.
-		self.visual_names = ['real', 'fake', 'result']
+		self.visual_names = ['faces', 'edges', 'result']
 		# specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks to save and load networks.
 		# you can use opt.isTrain to specify different behaviors for training and test. For example, some networks will not be used during test, and you don't need to load them.
 		if self.isTrain:
@@ -88,9 +88,9 @@ class Edges2facesModel(BaseModel):
 			input: a dictionary that contains the data itself and its metadata information.
 		"""
 		AtoB = self.opt.direction == 'AtoB'  # use <direction> to swap data_A and data_B
-		self.edges = input['A' if AtoB else 'B'].to(self.device)  # get image data A
-		self.faces = input['B' if AtoB else 'A'].to(self.device)  # get image data B
-		self.image_paths = input['A_paths' if AtoB else 'B_paths']  # get image paths
+		self.edges = input['data_A' if AtoB else 'data_B'].to(self.device)  # get image data A
+		self.faces = input['data_B' if AtoB else 'data_A'].to(self.device)  # get image data B
+		self.image_paths = input['path']  # get image paths
 
 	def forward(self):
 		"""Run forward pass. This will be called by both functions <optimize_parameters> and <test>."""
@@ -98,26 +98,26 @@ class Edges2facesModel(BaseModel):
 
 	def backward_D(self):
 		"""Calculate losses, gradients, and update network weights; called in every training iteration"""
-		# Fake; stop backprop to the generator by detaching fake_B
-		fake = torch.cat((self.edges, self.result),
-		                    1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-		pred_fake = self.netD(fake.detach())
-		self.loss_D_fake = self.criterionGAN(pred_fake, False)
-		# Real
-		real = torch.cat((self.edges, self.faces), 1)
-		pred_real = self.netD(real)
-		self.loss_D_real = self.criterionGAN(pred_real, True)
+		# Edges; stop backprop to the generator by detaching edges_B
+		edges = torch.cat((self.edges, self.result),
+		                 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
+		pred_edges = self.netD(edges.detach())
+		self.loss_D_edges = self.criterionGAN(pred_edges, False)
+		# Faces
+		faces = torch.cat((self.edges, self.faces), 1)
+		pred_faces = self.netD(faces)
+		self.loss_D_faces = self.criterionGAN(pred_faces, True)
 		# combine loss and calculate gradients
-		self.loss_D = (self.loss_D_fake + self.loss_D_real) * 0.5
+		self.loss_D = (self.loss_D_edges + self.loss_D_faces) * 0.5
 		self.loss_D.backward()
 
 	def backward_G(self):
 		# First, G(A) should fake the discriminator
-		fake = torch.cat((self.edges, self.result), 1)
-		pred_fake = self.netD(fake)
-		self.loss_G_GAN = self.criterionGAN(pred_fake, True)
+		edges = torch.cat((self.edges, self.result), 1)
+		pred_edges = self.netD(edges)
+		self.loss_G_GAN = self.criterionGAN(pred_edges, True)
 		# Second, G(A) = B
-		self.loss_G_L1 = self.criterionL1(self.result, self.faces) * self.opt.lambda_L1
+		self.loss_G_L1 = self.criterionL1(self.result, self.faces) * self.opt.lambda_regression
 		# combine loss and calculate gradients
 		self.loss_G = self.loss_G_GAN + self.loss_G_L1
 		self.loss_G.backward()
