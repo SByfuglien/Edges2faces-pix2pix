@@ -32,10 +32,10 @@ class Edges2facesModel(BaseModel):
 		Returns:
 			the modified parser.
 		"""
-		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
+		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces', no_flip=True)  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
 		if is_train:
 			parser.set_defaults(pool_size=0, gan_mode='vanilla')
-			parser.add_argument('--lambda_regression', type=float, default=1.0, help='weight for the regression loss')  # You can define new arguments for this model.
+			parser.add_argument('--lambda_regression', type=float, default=10.0, help='weight for the regression loss')  # You can define new arguments for this model.
 
 		return parser
 
@@ -101,7 +101,7 @@ class Edges2facesModel(BaseModel):
 		# Edges; stop backprop to the generator by detaching edges_B
 		edges = torch.cat((self.edges, self.result),
 		                 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-		pred_edges = self.netD(edges.detach())
+		pred_edges= self.netD(edges.detach())
 		self.loss_D_edges = self.criterionGAN(pred_edges, False)
 		# Faces
 		faces = torch.cat((self.edges, self.faces), 1)
