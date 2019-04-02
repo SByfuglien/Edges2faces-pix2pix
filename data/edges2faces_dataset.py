@@ -30,7 +30,7 @@ class Edges2FacesDataset(BaseDataset):
             the modified parser.
         """
         parser.add_argument('--new_dataset_option', type=float, default=1.0, help='new dataset option')
-        parser.set_defaults(max_dataset_size=10, new_dataset_option=2.0)  # specify dataset-specific default values
+        # parser.set_defaults(max_dataset_size=10, new_dataset_option=2.0)  # specify dataset-specific default values
         return parser
 
     def __init__(self, opt):
@@ -47,7 +47,7 @@ class Edges2FacesDataset(BaseDataset):
         # save the option and dataset root
         BaseDataset.__init__(self, opt)
         # get the image paths of your dataset;
-        self.dir_result = '../dataset/test_AB/edges'
+        self.dir_result = 'dataset-2k'
         self.image_paths = sorted(make_dataset(self.dir_result, opt.max_dataset_size))  # You can call sorted(make_dataset(self.root, opt.max_dataset_size)) to get all the image paths under the directory self.root
         assert (self.opt.load_size >= self.opt.crop_size)
         # define the default transform function. You can use <base_dataset.get_transform>; You can also define your custom transform function
