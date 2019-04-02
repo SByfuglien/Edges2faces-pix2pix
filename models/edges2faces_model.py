@@ -32,10 +32,10 @@ class Edges2facesModel(BaseModel):
 		Returns:
 			the modified parser.
 		"""
-		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
+		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces', no_flip='true')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
 		if is_train:
 			parser.set_defaults(pool_size=0, gan_mode='vanilla')
-			parser.add_argument('--lambda_regression', type=float, default=1.0, help='weight for the regression loss')  # You can define new arguments for this model.
+			parser.add_argument('--lambda_regression', type=float, default=100.0, help='weight for the regression loss')  # You can define new arguments for this model.
 
 		return parser
 
@@ -50,20 +50,31 @@ class Edges2facesModel(BaseModel):
 		- define loss function, visualization images, model names, and optimizers
 		"""
 		BaseModel.__init__(self, opt)  # call the initialization method of BaseModel
-		# specify the training losses you want to print out. The program will call base_model.get_current_losses to plot the losses to the console and save them to the disk.
-		self.loss_names = ['G_L1', 'G_GAN', 'D_faces', 'D_edges']
-		# specify the images you want to save and display. The program will call base_model.get_current_visuals to save and display these images.
-		self.visual_names = ['faces', 'edges', 'result']
-		# specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks to save and load networks.
-		# you can use opt.isTrain to specify different behaviors for training and test. For example, some networks will not be used during test, and you don't need to load them.
+		# specify the training losses you want to print out.
+		# The program will call base_model.get_current_losses to plot the losses to the console
+		# and save them to the disk.
+		self.loss_names = ['G_L1', 'G_GAN', 'D_real', 'D_generated']
+		# specify the images you want to save and display.
+		# The program will call base_model.get_current_visuals to save
+		# and display these images.
+		if self.isTrain:
+			self.visual_names = ['faces', 'edges', 'result']
+		else:
+			self.visual_names = ['edges', 'result']
+		# specify the models you want to save to the disk.
+		# The program will call base_model.save_networks and base_model.load_networks to save and load networks.
+		# you can use opt.isTrain to specify different behaviors for training and test.
+		# For example, some networks will not be used during test, and you don't need to load them.
 		if self.isTrain:
 			self.model_names = ['G', 'D']
 		else:  # during test time, only load G
 			self.model_names = ['G']
 		# define networks; you can use opt.isTrain to specify different behaviors for training and test.
-		self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, gpu_ids=self.gpu_ids)
+		self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
+									  not opt.no_dropout, opt.init_type, opt.init_gain, gpu_ids=self.gpu_ids)
 
-		if self.isTrain:  # define a discriminator; conditional GANs need to take both input and output images; Therefore, #channels for D is input_nc + output_nc
+		if self.isTrain:  # define a discriminator; conditional GANs need to take both input and output images;
+			# Therefore, #channels for D is input_nc + output_nc
 			self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
 			                              opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
 
@@ -73,7 +84,8 @@ class Edges2facesModel(BaseModel):
 			self.criterionL1 = torch.nn.L1Loss()
 			self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
 			# define and initialize optimizers. You can define one optimizer for each network.
-			# If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
+			# If two networks are updated at the same time, you can use itertools.chain to group them.
+			# See cycle_gan_model.py for an example.
 			self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 			self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 			self.optimizers.append(self.optimizer_G)
@@ -87,9 +99,9 @@ class Edges2facesModel(BaseModel):
 		Parameters:
 			input: a dictionary that contains the data itself and its metadata information.
 		"""
-		AtoB = self.opt.direction == 'AtoB'  # use <direction> to swap data_A and data_B
-		self.edges = input['data_A' if AtoB else 'data_B'].to(self.device)  # get image data A
-		self.faces = input['data_B' if AtoB else 'data_A'].to(self.device)  # get image data B
+		self.edges = input['data_A'].to(self.device)  # get image data A
+		if self.isTrain:
+			self.faces = input['data_B'].to(self.device)  # get image data B
 		self.image_paths = input['path']  # get image paths
 
 	def forward(self):
@@ -99,23 +111,22 @@ class Edges2facesModel(BaseModel):
 	def backward_D(self):
 		"""Calculate losses, gradients, and update network weights; called in every training iteration"""
 		# Edges; stop backprop to the generator by detaching edges_B
-		edges = torch.cat((self.edges, self.result),
-		                 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-		pred_edges = self.netD(edges.detach())
-		self.loss_D_edges = self.criterionGAN(pred_edges, False)
+		generated = torch.cat((self.edges, self.result), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
+		pred_generated = self.netD(generated.detach())
+		self.loss_D_generated = self.criterionGAN(pred_generated, False)
 		# Faces
-		faces = torch.cat((self.edges, self.faces), 1)
-		pred_faces = self.netD(faces)
-		self.loss_D_faces = self.criterionGAN(pred_faces, True)
+		real = torch.cat((self.edges, self.faces), 1)
+		pred_real = self.netD(real)
+		self.loss_D_real = self.criterionGAN(pred_real, True)
 		# combine loss and calculate gradients
-		self.loss_D = (self.loss_D_edges + self.loss_D_faces) * 0.5
+		self.loss_D = (self.loss_D_generated + self.loss_D_real) * 0.5
 		self.loss_D.backward()
 
 	def backward_G(self):
 		# First, G(A) should fake the discriminator
-		edges = torch.cat((self.edges, self.result), 1)
-		pred_edges = self.netD(edges)
-		self.loss_G_GAN = self.criterionGAN(pred_edges, True)
+		generated = torch.cat((self.edges, self.result), 1)
+		pred_generated = self.netD(generated)
+		self.loss_G_GAN = self.criterionGAN(pred_generated, True)
 		# Second, G(A) = B
 		self.loss_G_L1 = self.criterionL1(self.result, self.faces) * self.opt.lambda_regression
 		# combine loss and calculate gradients

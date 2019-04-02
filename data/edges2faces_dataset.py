@@ -11,7 +11,7 @@ You need to implement the following functions:
     -- <__getitem__>: Return a data point and its metadata information.
     -- <__len__>: Return the number of images.
 """
-from data.base_dataset import BaseDataset, get_transform
+from data.base_dataset import BaseDataset, get_transform, get_params
 from data.image_folder import make_dataset
 from PIL import Image
 
@@ -29,8 +29,6 @@ class Edges2FacesDataset(BaseDataset):
         Returns:
             the modified parser.
         """
-        parser.add_argument('--new_dataset_option', type=float, default=1.0, help='new dataset option')
-        # parser.set_defaults(max_dataset_size=10, new_dataset_option=2.0)  # specify dataset-specific default values
         return parser
 
     def __init__(self, opt):
@@ -51,7 +49,8 @@ class Edges2FacesDataset(BaseDataset):
         self.image_paths = sorted(make_dataset(self.dir_result, opt.max_dataset_size))  # You can call sorted(make_dataset(self.root, opt.max_dataset_size)) to get all the image paths under the directory self.root
         assert (self.opt.load_size >= self.opt.crop_size)
         # define the default transform function. You can use <base_dataset.get_transform>; You can also define your custom transform function
-        self.transform = get_transform(opt)
+        self.input_nc = self.opt.input_nc
+        self.output_nc = self.opt.output_nc
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -79,8 +78,12 @@ class Edges2FacesDataset(BaseDataset):
 
         # TODO add other transformations
         # Step 3
-        data_edges = self.transform(edges)
-        data_faces = self.transform(faces)
+        transform_params = get_params(self.opt, edges.size)
+        edges_transform = get_transform(self.opt, transform_params, grayscale=(self.input_nc == 1))
+        faces_transform = get_transform(self.opt, transform_params, grayscale=(self.output_nc == 1))
+
+        data_edges = edges_transform(edges)
+        data_faces = faces_transform(faces)
 
         # Step 4
         return {'data_A': data_edges, 'data_B': data_faces, 'path': image_path}

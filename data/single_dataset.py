@@ -33,7 +33,7 @@ class SingleDataset(BaseDataset):
         A_path = self.A_paths[index]
         A_img = Image.open(A_path).convert('RGB')
         A = self.transform(A_img)
-        return {'A': A, 'A_paths': A_path}
+        return {'data_A': A, 'path': A_path}
 
     def __len__(self):
         """Return the total number of images in the dataset."""
