@@ -110,7 +110,7 @@ def natural_keys(text):
 
 
 root_dir = args["image_dir"]
-destination_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/edges/"
+destination_dir = "C:/Users/Sivert/git/Edges2faces-pix2pix/drawing/"
 picture_num = 1
 for root, dirs, files in os.walk(root_dir, topdown=True):
 	for file in sorted(files, key=natural_keys):

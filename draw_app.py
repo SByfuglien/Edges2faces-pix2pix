@@ -2,12 +2,9 @@ import cv2
 import numpy as np
 from options.test_options import TestOptions
 from models import create_model
-import torch
-from data.base_dataset import get_transform, get_params
 from PIL import Image
 from data import create_dataset
 from util import util
-from scipy.misc import imresize
 
 opt = TestOptions().parse()
 opt.num_threads = 0  # test code only supports num_threads = 1
@@ -41,8 +38,9 @@ def forward_pass():
 		im = util.tensor2im(image)
 		h, w, _ = im.shape
 		imag = Image.fromarray(im)
-		cv2.imshow("generated", im)
-		imag.save("results/img.jpg")
+		rgb_img = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+		cv2.imshow("generated", rgb_img)
+		imag.save("results/generated_ " + str(i) + ".jpg")
 
 
 # print("done")
@@ -66,7 +64,7 @@ def draw_circle(event, x, y, flags, param):
 				ix, iy = x, y
 	elif event == cv2.EVENT_LBUTTONUP:
 		drawing = False
-		cv2.imwrite("drawing/draw.jpg", img)
+		# cv2.imwrite("drawing/draw.jpg", img)
 		forward_pass()
 	# elif event == cv2.EVENT_RBUTTONDOWN:
 	# 	cv2.imwrite("drawing/draw.jpg", img)

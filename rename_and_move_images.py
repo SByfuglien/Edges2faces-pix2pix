@@ -16,21 +16,29 @@ def natural_keys(text):
 	return [atoi(c) for c in re.split(r'(\d+)', text)]
 
 
-# root_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/targets/"
-# destination_dir = "C:/Users/Sivert/Datasets/face-matching-dataset/targets/"
-root_dir = "dataset-2k/train/"
-destination_dir = "dataset-2k/val/"
+root_dir = "C:/Users/Sivert/Datasets/dataset-5k/faces/"
+destination_dir = "C:/Users/Sivert/Datasets/dataset-5k/edges/"
+# root_dir = "dataset-2k/train/"
+# destination_dir = "dataset-2k/val/"
+
+# numbers = []
+# for root, dirs, files in os.walk(root_dir, topdown=True):
+# 	for file in sorted(files, key=natural_keys):
+# 		string1 = file.split("/")[-1]
+# 		number = file.split("_B")[0]
+# 		numbers.append(number)
+# print(numbers)
 picture_num = 1
 for root, dirs, files in os.walk(root_dir, topdown=True):
 	for file in sorted(files, key=natural_keys):
-		# print("{}/{}".format(picture_num, len(files)))
-		# if picture_num < 492:
+		# if str(picture_num) not in numbers:
+		# 	print(picture_num)
+		# 	# os.rename(os.path.join(root, file), destination_dir + str(picture_num) + "_A.jpg")
+		# 	os.remove(os.path.join(root, file))
 		# 	picture_num += 1
 		# 	continue
-		if random.random() < 0.11:
-			os.rename(os.path.join(root, file), destination_dir + file)
-			picture_num += 1
-			print(picture_num)
-			if picture_num == 201:
-				break
+		os.rename(os.path.join(root, file), root_dir + str(picture_num) + "_B.jpg")
+		# os.remove(os.path.join(root, file))
+		picture_num += 1
+
 

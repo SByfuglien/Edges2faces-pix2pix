@@ -32,7 +32,7 @@ class Edges2facesModel(BaseModel):
 		Returns:
 			the modified parser.
 		"""
-		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces', no_flip='true', gan_mode='wgangp', lr=0.00005)  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
+		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces', no_flip='true')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
 		if is_train:
 			parser.set_defaults(pool_size=0, gan_mode='vanilla')
 			parser.add_argument('--lambda_regression', type=float, default=100.0, help='weight for the regression loss')  # You can define new arguments for this model.
@@ -53,7 +53,7 @@ class Edges2facesModel(BaseModel):
 		# specify the training losses you want to print out.
 		# The program will call base_model.get_current_losses to plot the losses to the console
 		# and save them to the disk.
-		self.loss_names = ['gradient_penalty', 'G_L1', 'G_GAN', 'D_real', 'D_generated']
+		self.loss_names = ['G_L1', 'G_GAN', 'D_real', 'D_generated']
 		# specify the images you want to save and display.
 		# The program will call base_model.get_current_visuals to save
 		# and display these images.
@@ -83,12 +83,11 @@ class Edges2facesModel(BaseModel):
 			# We also provide a GANLoss class "networks.GANLoss". self.criterionGAN = networks.GANLoss().to(self.device)
 			self.criterionL1 = torch.nn.L1Loss()
 			self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
-			#self.WGAN = networks.cal_gradient_penalty(self.netD, self.faces, self.results, self.device)
 			# define and initialize optimizers. You can define one optimizer for each network.
 			# If two networks are updated at the same time, you can use itertools.chain to group them.
 			# See cycle_gan_model.py for an example.
-			self.optimizer_G = torch.optim.RMSprop(self.netG.parameters(), lr=opt.lr)
-			self.optimizer_D = torch.optim.RMSprop(self.netD.parameters(), lr=opt.lr)
+			self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+			self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 			self.optimizers.append(self.optimizer_G)
 			self.optimizers.append(self.optimizer_D)
 
@@ -119,12 +118,9 @@ class Edges2facesModel(BaseModel):
 		real = torch.cat((self.edges, self.faces), 1)
 		pred_real = self.netD(real)
 		self.loss_D_real = self.criterionGAN(pred_real, True)
-		self.loss_gradient_penalty, self.gradient = networks.cal_gradient_penalty(self.netD, real, generated, self.device)
-		# if type(self.gradient_penalty) != float:
-		self.loss_gradient_penalty.backward(retain_graph=True)
 		# combine loss and calculate gradients
-		self.loss_D = (self.loss_D_generated + self.loss_D_real + self.loss_gradient_penalty)  # * 0.5
-		self.loss_D.backward(retain_graph=True)
+		self.loss_D = (self.loss_D_generated + self.loss_D_real) * 0.5
+		self.loss_D.backward()
 
 	def backward_G(self):
 		# First, G(A) should fake the discriminator
@@ -134,23 +130,17 @@ class Edges2facesModel(BaseModel):
 		# Second, G(A) = B
 		self.loss_G_L1 = self.criterionL1(self.result, self.faces) * self.opt.lambda_regression
 		# combine loss and calculate gradients
-		self.loss_G = self.loss_G_GAN
+		self.loss_G = self.loss_G_GAN + self.loss_G_L1
 		self.loss_G.backward()
 
 	def optimize_parameters(self):
 		"""Update network weights; it will be called in every training iteration."""
-
-		#  Train the discriminator 5 times more
-		for i in range(5):
-			self.forward()               # first call forward to calculate intermediate results
-			# Update D
-			self.set_requires_grad(self.netD, True) # enable backprop for D
-			self.optimizer_D.zero_grad()   # clear network G's existing gradients
-			self.backward_D()              # calculate gradients for network D
-			self.optimizer_D.step()        # update gradients for network D
-
-			for p in self.netD.parameters():
-				p.data.clamp_(-0.01, 0.01)
+		self.forward()               # first call forward to calculate intermediate results
+		# Update D
+		self.set_requires_grad(self.netD, True) # enable backprop for D
+		self.optimizer_D.zero_grad()   # clear network G's existing gradients
+		self.backward_D()              # calculate gradients for network D
+		self.optimizer_D.step()        # update gradients for network D
 		# Update g
 		self.set_requires_grad(self.netD, False)
 		self.optimizer_G.zero_grad()  # clear network G's existing gradients
