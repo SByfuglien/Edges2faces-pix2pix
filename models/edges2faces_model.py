@@ -130,12 +130,12 @@ class Edges2facesModel(BaseModel):
 	def backward_G(self):
 		# First, G(A) should fake the discriminator
 		generated = torch.cat((self.edges, self.result), 1)
-		pred_generated = self.netD(generated)
-		self.loss_G_GAN = self.criterionGAN(pred_generated, True)
+		pred_generated = self.netD(generated.detach())
+		self.loss_G_GAN = self.criterionGAN(pred_generated, False)
 		# Second, G(A) = B
 		self.loss_G_L1 = self.criterionL1(self.result, self.faces) * self.opt.lambda_regression
 		# combine loss and calculate gradients
-		self.loss_G = self.loss_G_GAN
+		self.loss_G = - self.loss_G_GAN
 		self.loss_G.backward()
 
 	def optimize_parameters(self):
