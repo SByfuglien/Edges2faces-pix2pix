@@ -32,7 +32,7 @@ class Edges2facesModel(BaseModel):
 		Returns:
 			the modified parser.
 		"""
-		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces', no_flip='true', gan_mode='wgangp', lr=0.00005, batch_size=64)  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
+		parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='edges2faces', no_flip='true', gan_mode='wgangp', lr=0.00005, batch_size=32)  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
 		if is_train:
 			parser.set_defaults(pool_size=0, gan_mode='vanilla')
 			parser.add_argument('--lambda_regression', type=float, default=100.0, help='weight for the regression loss')  # You can define new arguments for this model.
@@ -140,17 +140,16 @@ class Edges2facesModel(BaseModel):
 	def optimize_parameters(self):
 		"""Update network weights; it will be called in every training iteration."""
 
-		#  Train the discriminator 5 times more
-		for i in range(5):
-			self.forward()               # first call forward to calculate intermediate results
-			# Update D
-			self.set_requires_grad(self.netD, True) # enable backprop for D
-			self.optimizer_D.zero_grad()   # clear network G's existing gradients
-			self.backward_D()              # calculate gradients for network D
-			self.optimizer_D.step()        # update gradients for network D
+		self.forward()               # first call forward to calculate intermediate results
+		# Update D
+		self.set_requires_grad(self.netD, True) # enable backprop for D
+		self.optimizer_D.zero_grad()   # clear network G's existing gradients
+		self.backward_D()              # calculate gradients for network D
+		self.optimizer_D.step()        # update gradients for network D
 
-			for p in self.netD.parameters():
-				p.data.clamp_(-0.01, 0.01)
+		for p in self.netD.parameters():
+			p.data.clamp_(-0.01, 0.01)
+
 		# Update g
 		self.set_requires_grad(self.netD, False)
 		self.optimizer_G.zero_grad()  # clear network G's existing gradients
