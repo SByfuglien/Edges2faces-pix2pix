@@ -32,10 +32,14 @@ class Edges2facesogModel(BaseModel):
 		Returns:
 			the modified parser.
 		"""
-		parser.set_defaults(norm='instance', init_type='xavier',
-							netG='unet_256', dataset_mode='edges2faces', gan_mode='lsgan', lr=0.00005)  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
+		parser.set_defaults(norm='batch', netG='unet_256',
+							dataset_mode='edges2faces')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
+
+		# parser.set_defaults(norm='instance', init_type='xavier',
+		# 					netG='unet_256', dataset_mode='edges2faces', gan_mode='lsgan', lr=0.00005)  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
 		if is_train:
 			parser.set_defaults(pool_size=0)
+			parser.set_defaults(gan_mode='vanilla')
 			parser.add_argument('--lambda_regression', type=float, default=100.0, help='weight for the regression loss')  # You can define new arguments for this model.
 
 		return parser
@@ -87,8 +91,8 @@ class Edges2facesogModel(BaseModel):
 			# define and initialize optimizers. You can define one optimizer for each network.
 			# If two networks are updated at the same time, you can use itertools.chain to group them.
 			# See cycle_gan_model.py for an example.
-			self.optimizer_G = torch.optim.RMSprop(self.netG.parameters(), lr=opt.lr)
-			self.optimizer_D = torch.optim.RMSprop(self.netD.parameters(), lr=opt.lr)
+			self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+			self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 			self.optimizers.append(self.optimizer_G)
 			self.optimizers.append(self.optimizer_D)
 
