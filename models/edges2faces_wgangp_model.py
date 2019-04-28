@@ -3,7 +3,7 @@ from .base_model import BaseModel
 from . import networks
 
 
-class Edges2facesModel(BaseModel):
+class Edges2faceswgangpModel(BaseModel):
 	@staticmethod
 	def modify_commandline_options(parser, is_train=True):
 		"""Add new model-specific options and rewrite default values for existing options.
@@ -87,11 +87,11 @@ class Edges2facesModel(BaseModel):
 
 	def backward_D(self):
 		"""Calculate losses, gradients, and update network weights; called in every training iteration"""
-		# Edges; stop backprop to the generator by detaching edges_B
+		# Fake
 		generated = torch.cat((self.edges, self.result), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
 		pred_generated = self.netD(generated.detach())
 		self.loss_D_generated = self.criterionGAN(pred_generated, False)
-		# Faces
+		# Real
 		real = torch.cat((self.edges, self.faces), 1)
 		pred_real = self.netD(real)
 		self.loss_D_real = self.criterionGAN(pred_real, True)

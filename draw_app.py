@@ -14,6 +14,7 @@ opt.no_flip = True  # no flip; comment this line if results on flipped images ar
 opt.display_id = -1  # no visdom display; the test code saves the results to a HTML file.
 opt.load_iter = 0
 opt.epoch = 'latest'
+opt.dataset_mode = 'single'
 model = create_model(opt)  # create a model given opt.model and other options
 model.setup(opt)
 
