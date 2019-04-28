@@ -115,7 +115,7 @@ class Edges2facesogModel(BaseModel):
 
 	def backward_D(self):
 		"""Calculate losses, gradients, and update network weights; called in every training iteration"""
-		# Edges; stop backprop to the generator by detaching edges_B
+		# Edges; stop backprop to the generator by detaching edges
 		generated = torch.cat((self.edges, self.result), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
 		pred_generated = self.netD(generated.detach())
 		self.loss_D_generated = self.criterionGAN(pred_generated, False)
@@ -128,7 +128,7 @@ class Edges2facesogModel(BaseModel):
 		self.loss_D.backward()
 
 	def backward_G(self):
-		# First, G(A) should fake the discriminator
+		# First, the generated image should fake the discriminator
 		generated = torch.cat((self.edges, self.result), 1)
 		pred_generated = self.netD(generated)
 		self.loss_G_GAN = self.criterionGAN(pred_generated, True)

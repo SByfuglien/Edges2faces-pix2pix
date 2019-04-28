@@ -43,9 +43,6 @@ def forward_pass():
 		imag.save("results/generated_ " + str(i) + ".jpg")
 
 
-# print("done")
-
-
 # mouse callback function
 def draw_circle(event, x, y, flags, param):
 	global ix, iy, drawing, running, paint_size
@@ -67,9 +64,6 @@ def draw_circle(event, x, y, flags, param):
 		img2 = cv2.GaussianBlur(img, (5, 5), 10)
 		cv2.imwrite("drawing/draw.jpg", img2)
 		forward_pass()
-	# elif event == cv2.EVENT_RBUTTONDOWN:
-	# 	cv2.imwrite("drawing/draw.jpg", img)
-	# 	forward_pass()
 	elif event == cv2.EVENT_MOUSEWHEEL:
 		if flags > 0 and paint_size < 10:
 			paint_size += 1
