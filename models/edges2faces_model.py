@@ -35,7 +35,7 @@ class Edges2facesModel(BaseModel):
 		parser.set_defaults(norm='instance', init_type='xavier',
 							netG='unet_256', dataset_mode='edges2faces', gan_mode='wgangp', lr=0.00005)  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
 		if is_train:
-			parser.set_defaults(pool_size=0, gan_mode='vanilla')
+			parser.set_defaults(pool_size=0)
 			parser.add_argument('--lambda_regression', type=float, default=100.0, help='weight for the regression loss')  # You can define new arguments for this model.
 
 		return parser

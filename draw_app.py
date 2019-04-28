@@ -64,7 +64,8 @@ def draw_circle(event, x, y, flags, param):
 				ix, iy = x, y
 	elif event == cv2.EVENT_LBUTTONUP:
 		drawing = False
-		# cv2.imwrite("drawing/draw.jpg", img)
+		img2 = cv2.GaussianBlur(img, (5, 5), 10)
+		cv2.imwrite("drawing/draw.jpg", img2)
 		forward_pass()
 	# elif event == cv2.EVENT_RBUTTONDOWN:
 	# 	cv2.imwrite("drawing/draw.jpg", img)
