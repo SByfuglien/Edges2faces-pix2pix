@@ -80,18 +80,9 @@ destination_dir = "C:/Users/Sivert/git/Edges2faces-pix2pix/drawing/"
 picture_num = 1
 for root, dirs, files in os.walk(root_dir, topdown=True):
 	for file in sorted(files, key=natural_keys):
-		# if picture_num < 492:
-		# 	picture_num += 1
-		# 	continue
+
 		image = cv2.imread(os.path.join(root, file))
 		(H, W) = image.shape[:2]
-
-		# convert the image to grayscale, blur it, and perform Canny
-		# edge detection
-		# print("[INFO] performing Canny edge detection...")
-		# gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-		# blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-		# canny = cv2.Canny(blurred, 30, 150)
 
 		# construct a blob out of the input image for the Holistically-Nested
 		# Edge Detector
